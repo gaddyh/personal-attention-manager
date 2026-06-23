@@ -25,6 +25,144 @@ This keeps the system debuggable, controllable, and easier to improve.
 
 ---
 
+## System Components
+
+The backend is made of a few separate components. Each component should have a clear responsibility so the agent system does not become tangled with WhatsApp plumbing, login state, or notification policy.
+
+```text
+WhatsApp / Green API
+   ↓
+Webhook endpoints
+   ↓
+Message storage + running chat history
+   ↓
+LangGraph agent system
+   ↓
+ChatCards + priority queue
+   ↓
+Notification management
+```
+
+### 1. Personal WhatsApp Webhook
+
+Endpoint:
+
+```text
+POST /personal_green_api/webhook/{user_id}
+```
+
+Receives messages from the user’s own WhatsApp connection through Green API.
+
+Responsibilities:
+
+- identify the user by `user_id`
+- validate the webhook source
+- normalize incoming WhatsApp messages
+- append messages to the correct chat history
+- mark the chat as dirty / active
+- trigger or enqueue background triage work
+
+This endpoint is for the **personal attention manager** use case: listening to the user’s own WhatsApp messages.
+
+### 2. Business Bot Webhook
+
+Endpoint:
+
+```text
+POST /bot_business_webhook
+```
+
+Receives messages for the business bot flow.
+
+Responsibilities:
+
+- handle customer-facing bot conversations
+- route business messages to the bot agent
+- keep the business bot logic separate from the personal attention manager
+
+This separation matters. The personal backend listens and prioritizes. The business bot answers customers.
+
+### 3. LangGraph Agent System
+
+The agent system is the cognitive layer. It should not know too much about Green API details.
+
+Responsibilities:
+
+- classify chat identity
+- understand the current situation
+- detect waiting / obligation
+- estimate delay cost
+- apply user preferences
+- produce `ChatCard`s
+- rank waiting chats globally
+
+The mental model is a graph of narrow cognitive steps, not one large summarizer.
+
+### 4. Running Chat History
+
+For each active chat, the system keeps enough state to understand what is currently open.
+
+Stored state may include:
+
+```text
+recent raw messages
+rolling summary
+open loops
+last commitments
+last inbound timestamp
+last outbound timestamp
+last ChatCard
+known chat type
+user corrections
+```
+
+The running history is the memory substrate for the agents. The most important part is not the generic summary, but the active **open loops**.
+
+### 5. Green API Login / QR Scan Management
+
+The system needs an operational login layer for connecting each user to Green API.
+
+Responsibilities:
+
+- create or track a Green API instance per user
+- expose QR scan login status
+- store connection/session state in OLTP storage
+- detect whether the user is connected, disconnected, or expired
+- avoid running triage for users without a valid WhatsApp connection
+
+This is product infrastructure, not agent logic. Keep it separate.
+
+### 6. Reauthorization Mechanism
+
+Users may need to reconnect or reauthorize their Green API session.
+
+Responsibilities:
+
+- detect expired / disconnected sessions
+- mark the user as needing reauth
+- notify the user that WhatsApp connection is inactive
+- provide a fresh QR scan flow
+- pause message processing until reconnection is complete
+
+The agent system should not silently fail because WhatsApp auth expired. Reauth status should be explicit.
+
+### 7. Notification Management
+
+Notification management decides whether to interrupt the user, draft a reply, remind later, or do nothing.
+
+Responsibilities:
+
+- consume ranked `ChatCard`s
+- apply deterministic notification policy
+- avoid notification spam
+- respect snooze / mute / quiet hours
+- surface urgent chats
+- optionally create draft replies
+
+The LLM explains the situation. The notification layer decides how aggressively to act.
+
+---
+
 ## Mental Agent Graph
 
 ```text
