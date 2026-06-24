@@ -7,7 +7,7 @@ from personal_attention_manager.core.domain import (
     NotificationPolicy,
     snooze_chat,
 )
-from personal_attention_manager.integrations.green_api import GreenApiMessageEvent
+from personal_attention_manager.integrations.green_api import MessageEvent
 from personal_attention_manager.core.models import MessageDirection as WebhookMessageDirection
 from personal_attention_manager.state.waiting_state import InMemoryWaitingStateService
 
@@ -24,8 +24,8 @@ def event(
     direction: WebhookMessageDirection = WebhookMessageDirection.INBOUND,
     message_time: datetime = dt(10),
     text: str | None = "Hi, are you available today?",
-) -> GreenApiMessageEvent:
-    return GreenApiMessageEvent(
+) -> MessageEvent:
+    return MessageEvent(
         provider_message_id=message_id,
         chat_id=chat_id,
         chat_name=chat_name,

@@ -20,7 +20,7 @@ OUTBOUND_WEBHOOK_TYPES = {
 
 
 @dataclass(frozen=True)
-class GreenApiMessageEvent:
+class MessageEvent:
     """
     Normalized message event from Green API.
 
@@ -40,7 +40,7 @@ class GreenApiMessageEvent:
 
 def normalize_green_api_message_event(
     payload: dict[str, Any],
-) -> GreenApiMessageEvent | None:
+) -> MessageEvent | None:
     """
     Convert a raw Green API webhook payload into a normalized internal event.
 
@@ -59,7 +59,7 @@ def normalize_green_api_message_event(
 
     message_data = get_message_data(payload)
 
-    return GreenApiMessageEvent(
+    return MessageEvent(
         provider_message_id=get_message_id(payload),
         chat_id=chat_id,
         chat_name=get_chat_name(payload),

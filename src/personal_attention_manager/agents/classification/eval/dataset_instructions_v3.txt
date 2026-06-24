@@ -1,0 +1,94 @@
+Generate candidate evaluation examples for a WhatsApp-style chat classification agent.
+
+The classifier labels are:
+
+* family
+* work
+* home
+* other
+
+Your goal is not to generate easy examples. Your goal is to generate examples that expose classification mistakes.
+
+Generate realistic recent chat histories. Each example must have:
+
+* id
+* recent_messages
+* expected_chat_type
+* notes
+
+General requirements:
+
+1. Generate exactly the requested number of examples.
+2. Keep examples realistic, short, and WhatsApp-like.
+3. Use natural language, not artificial label keywords.
+4. Include English, Hebrew, and mixed Hebrew-English.
+5. Include typos, slang, short replies, emojis, and informal phrasing when natural.
+6. Do not always include "You" as a participant.
+7. Do not always use exactly two messages.
+8. Do not overuse the same senders.
+9. Do not overuse the same templates.
+10. Do not create near-duplicates of seed examples or previously generated examples.
+11. Notes must explain why the expected label is correct and, for ambiguous cases, why the competing label is not correct.
+
+Message-count distribution target:
+
+* about 25% one-message examples
+* about 30% two-message examples
+* about 25% three-message examples
+* about 20% four-to-five-message examples
+
+Difficulty distribution target:
+
+* about 25% easy examples
+* about 45% medium examples
+* about 30% hard or ambiguous examples
+
+Label distribution:
+
+* Keep labels roughly balanced unless the caller explicitly requests a different distribution.
+* If a distribution is provided, follow it as closely as possible.
+
+Important boundary cases to include:
+
+* family vs home
+* work vs other
+* family sender but home topic
+* home words but family topic
+* work words used casually
+* casual/social opening that becomes work
+* one message that only makes sense because of sender/context
+* group chat with multiple people
+* latest message changes the dominant topic
+* short replies like "ok", "done", "כן", "סבבה"
+* unclear sender names like "Dad", "Maya", "Ops", "Building group", "Unknown"
+
+Classification policy:
+
+* family: relatives, children, parents, spouse, grandparents, family care, child logistics, emotional family coordination.
+* work: job, clients, colleagues, production incidents, deliverables, reviews, candidates, invoices, professional coordination.
+* home: house, apartment, bills, rent, mortgage, repairs, plumber, electrician, building committee, utilities, maintenance, property logistics.
+* other: casual/social, travel, hobbies, shopping, marketplace, restaurants, entertainment, personal errands, or anything that does not clearly fit family/work/home.
+
+Tie-breaking rules:
+
+* If family and home both appear, choose family when the dominant issue is people, relationships, children, parents, grandparents, or care.
+* If family and home both appear, choose home when the dominant issue is property, repairs, bills, rent, utilities, apartment, or building logistics.
+* If work and casual/social both appear, choose work only when the dominant purpose is professional.
+* If work-like words appear in a casual context, choose other.
+* If home-like objects appear in a marketplace/sale/travel context, choose other.
+* If the label depends on the latest message, use the latest dominant intent, not the first topic.
+
+Avoid these weak patterns:
+
+* too many examples with "client meeting"
+* too many examples with "deck"
+* too many examples with "plumber/leak"
+* too many examples with "rent transfer"
+* too many examples where the label is obvious from a single keyword
+* examples where the note merely repeats the keyword instead of explaining the decision boundary
+
+Good notes examples:
+
+* "Although Mom is the sender, the main topic is the broken window repair, so this is home rather than family."
+* "Although the chat starts with coffee, the real request is reviewing a candidate packet, so this is work."
+* "Although a couch is mentioned, this is a marketplace sale, not home logistics, so this is other."

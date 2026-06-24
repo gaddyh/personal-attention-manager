@@ -13,7 +13,16 @@ dependencies = [
     "uvicorn==0.38.0",
     "apscheduler==3.11.0",
     "httpx==0.28.1",
+    "openai>=1.86.0,<2.0.0",
+    "rich==14.2.0",
+    "langchain==0.3.27",
+    "langchain-openai==0.3.26",
+    "pydantic==2.12.3",
 ]
+
+[project.scripts]
+classification-generate = "personal_attention_manager.agents.classification.eval.generate:main"
+classification-eval = "personal_attention_manager.agents.classification.eval.evaluate:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

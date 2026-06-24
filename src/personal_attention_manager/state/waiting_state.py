@@ -12,7 +12,7 @@ from personal_attention_manager.core.domain import (
     record_outbound_message,
     should_send_notification,
 )
-from personal_attention_manager.integrations.green_api import GreenApiMessageEvent
+from personal_attention_manager.integrations.green_api import MessageEvent
 from personal_attention_manager.core.models import (
     ChatState,
     ChatStatus,
@@ -52,7 +52,7 @@ class InMemoryWaitingStateService:
 
     def apply_message_event(
         self,
-        event: GreenApiMessageEvent,
+        event: MessageEvent,
     ) -> MessageEventResult:
         """
         Apply one inbound/outbound WhatsApp message event.
