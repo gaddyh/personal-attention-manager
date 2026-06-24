@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from personal_attention_manager.agents.classification.core.schemas import ClassificationInput, ClassificationOutput, Message
+from personal_attention_manager.agents.shared.formatting import format_messages
 
 
 class ChatTypeAgent:
@@ -109,28 +110,13 @@ class ChatTypeAgent:
         self.chain = self.prompt | self.structured_llm
 
     def classify(self, input_data: ClassificationInput) -> ClassificationOutput:
-        recent_messages_text = self._format_messages(input_data.recent_messages)
+        recent_messages_text = format_messages(input_data.recent_messages)
 
         result: ClassificationOutput = self.chain.invoke(
             {"recent_messages": recent_messages_text}
         )
 
         return result
-
-    @staticmethod
-    def _format_messages(messages: list[Message]) -> str:
-        if not messages:
-            return "No recent messages."
-
-        sorted_messages = sorted(messages, key=lambda m: m.sent_time)
-
-        lines = []
-        for msg in sorted_messages:
-            lines.append(
-                f"[{msg.sent_time.isoformat()}] {msg.sender}: {msg.text}"
-            )
-
-        return "\n".join(lines)
 
 
 # ----------------------------

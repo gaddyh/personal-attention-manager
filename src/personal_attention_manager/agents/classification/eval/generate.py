@@ -6,16 +6,24 @@ import argparse
 import json
 import os
 from collections import Counter
-from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Literal
-import enum
 
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
+
+from personal_attention_manager.agents.shared.generate import (
+    GeneratedMessage,
+    dedupe_and_validate,
+)
+from personal_attention_manager.agents.shared.io import (
+    append_jsonl,
+    load_existing_ids,
+    read_jsonl,
+    read_text_file,
+)
 
 
 ChatTypeValue = Literal["family", "work", "home", "other"]
@@ -24,20 +32,6 @@ ChatTypeValue = Literal["family", "work", "home", "other"]
 # ----------------------------
 # Generated dataset schema
 # ----------------------------
-
-class GeneratedMessage(BaseModel):
-    sender: str = Field(description="Name or role of the message sender.")
-    text: str = Field(description="The message text.")
-    sent_time: str = Field(
-        description="ISO datetime string, for example 2026-06-24T09:30:00."
-    )
-
-
-class Difficulty(enum.Enum):
-    EASY = "easy"
-    MEDIUM = "medium"
-    HARD = "hard"
-
 
 class GeneratedExample(BaseModel):
     id: str
@@ -170,111 +164,6 @@ Return only examples that match the schema.
 
         return result.examples
 
-
-# ----------------------------
-# IO helpers
-# ----------------------------
-
-def read_text_file(path: str | None, default: str) -> str:
-    if not path:
-        return default
-
-    p = Path(path)
-    if not p.exists():
-        raise FileNotFoundError(f"File not found: {path}")
-
-    return p.read_text(encoding="utf-8")
-
-
-def read_jsonl(path: str | None) -> list[dict]:
-    if not path:
-        return []
-
-    p = Path(path)
-    if not p.exists():
-        return []
-
-    rows = []
-    for line in p.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line:
-            rows.append(json.loads(line))
-    return rows
-
-
-def append_jsonl(path: str, examples: list[GeneratedExample]) -> None:
-    with open(path, "a", encoding="utf-8") as f:
-        for ex in examples:
-            row = ex.model_dump()
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
-
-
-def load_existing_ids(path: str) -> set[str]:
-    p = Path(path)
-    if not p.exists():
-        return set()
-
-    ids = set()
-    for line in p.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        row = json.loads(line)
-        ids.add(row["id"])
-    return ids
-
-
-# ----------------------------
-# Validation / filtering
-# ----------------------------
-
-def validate_example(ex: GeneratedExample) -> tuple[bool, str]:
-    if not ex.id.strip():
-        return False, "missing id"
-
-    if not (1 <= len(ex.recent_messages) <= 5):
-        return False, "recent_messages must contain 1 to 5 messages"
-
-    for msg in ex.recent_messages:
-        if not msg.sender.strip():
-            return False, "empty sender"
-
-        if not msg.text.strip():
-            return False, "empty text"
-
-        try:
-            datetime.fromisoformat(msg.sent_time)
-        except ValueError:
-            return False, f"invalid sent_time: {msg.sent_time}"
-
-    if not ex.notes.strip():
-        return False, "missing notes"
-
-    return True, "ok"
-
-
-def dedupe_and_validate(
-    examples: list[GeneratedExample],
-    existing_ids: set[str],
-) -> tuple[list[GeneratedExample], list[str]]:
-    accepted: list[GeneratedExample] = []
-    rejected: list[str] = []
-
-    seen_ids = set(existing_ids)
-
-    for ex in examples:
-        if ex.id in seen_ids:
-            rejected.append(f"{ex.id}: duplicate id")
-            continue
-
-        valid, reason = validate_example(ex)
-        if not valid:
-            rejected.append(f"{ex.id}: {reason}")
-            continue
-
-        accepted.append(ex)
-        seen_ids.add(ex.id)
-
-    return accepted, rejected
 
 
 def count_labels(examples: list[GeneratedExample]) -> dict[str, int]:
