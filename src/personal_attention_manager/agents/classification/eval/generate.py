@@ -43,7 +43,7 @@ class GeneratedExample(BaseModel):
     id: str
     recent_messages: list[GeneratedMessage]
     expected_chat_type: ChatTypeValue
-    difficulty: Difficulty
+    difficulty: Literal["easy", "medium", "hard"]
     scenario_family: str
     boundary_case: str
     competing_label: ChatTypeValue | None
@@ -59,7 +59,7 @@ class GeneratedDataset(BaseModel):
 # ----------------------------
 
 class ChatTypeDatasetGenerator:
-    def __init__(self, model: str = "gpt-5.4-mini"):
+    def __init__(self, model: str = "gpt-5.4"):
         load_dotenv()
 
         llm = ChatOpenAI(
@@ -306,7 +306,7 @@ def print_coverage_report(examples: list[GeneratedExample]) -> None:
     )
     _table(
         "Difficulty distribution",
-        Counter(ex.difficulty.value for ex in examples),
+        Counter(ex.difficulty for ex in examples),
     )
     _table(
         "Scenario-family distribution",
@@ -364,13 +364,13 @@ DEFAULT_SEED_EXAMPLES = """
 
 def main() -> None:
     _script_dir = Path(__file__).parent
-
+    load_dotenv()
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--n", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=10)
     parser.add_argument("--out", type=str, default=str(_script_dir / "generated_chat_type_examples.jsonl"))
-    parser.add_argument("--model", type=str, default=os.getenv("OPENAI_MODEL", "gpt-5.4-mini"))
+    parser.add_argument("--model", type=str, default=os.getenv("OPENAI_MODEL_GENERATOR", "gpt-5.4-mini"))
 
     parser.add_argument(
         "--instructions-file",
@@ -398,6 +398,7 @@ def main() -> None:
     else:
         seed_examples = DEFAULT_SEED_EXAMPLES
 
+    print(f"Using model: {args.model}")
     generator = ChatTypeDatasetGenerator(model=args.model)
 
     total_accepted: list[GeneratedExample] = []

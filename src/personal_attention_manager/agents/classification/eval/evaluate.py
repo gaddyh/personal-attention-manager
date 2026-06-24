@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import statistics
+import time
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
@@ -93,6 +95,7 @@ def build_report_md(
     confusion: dict,
     failures: list,
     labels: list[ChatType],
+    latencies_ms: list[float],
 ) -> str:
     lines: list[str] = []
     accuracy = passed / total if total else 0.0
@@ -104,6 +107,10 @@ def build_report_md(
     lines.append(f"**Data:** {data_path}  ")
     lines.append("")
 
+    avg_ms = statistics.mean(latencies_ms) if latencies_ms else 0.0
+    median_ms = statistics.median(latencies_ms) if latencies_ms else 0.0
+    p95_ms = sorted(latencies_ms)[int(len(latencies_ms) * 0.95)] if latencies_ms else 0.0
+
     lines.append("## Summary")
     lines.append("")
     lines.append("| Metric | Value |")
@@ -112,6 +119,9 @@ def build_report_md(
     lines.append(f"| Passed | {passed} |")
     lines.append(f"| Failed | {total - passed} |")
     lines.append(f"| Accuracy | {accuracy:.3f} |")
+    lines.append(f"| Latency avg | {avg_ms:.0f} ms |")
+    lines.append(f"| Latency median | {median_ms:.0f} ms |")
+    lines.append(f"| Latency p95 | {p95_ms:.0f} ms |")
     lines.append("")
 
     lines.append("## Per-Label Accuracy")
@@ -195,11 +205,15 @@ def main() -> None:
     per_label_passed = defaultdict(int)
     confusion = defaultdict(int)
 
+    latencies_ms: list[float] = []
+
     for row in rows:
         total += 1
         per_label_total[row.expected_chat_type] += 1
 
+        t0 = time.perf_counter()
         prediction = agent.classify(row.input)
+        latencies_ms.append((time.perf_counter() - t0) * 1000)
 
         actual = prediction.chat_type
         expected = row.expected_chat_type
@@ -238,6 +252,7 @@ def main() -> None:
         confusion=confusion,
         failures=failures,
         labels=labels,
+        latencies_ms=latencies_ms,
     )
     saved_path = save_run(run_id, report, Path(args.runs_dir))
     print(f"\nRun report saved → {saved_path}")
@@ -247,7 +262,12 @@ def main() -> None:
     print(f"Total:    {total}")
     print(f"Passed:   {passed}")
     print(f"Failed:   {total - passed}")
+    avg_ms = statistics.mean(latencies_ms) if latencies_ms else 0.0
+    median_ms = statistics.median(latencies_ms) if latencies_ms else 0.0
+    p95_ms = sorted(latencies_ms)[int(len(latencies_ms) * 0.95)] if latencies_ms else 0.0
+
     print(f"Accuracy: {accuracy:.3f}")
+    print(f"Latency:  avg={avg_ms:.0f}ms  median={median_ms:.0f}ms  p95={p95_ms:.0f}ms")
 
     print("\nPER-LABEL ACCURACY")
     print("-" * 80)
