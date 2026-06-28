@@ -18,11 +18,14 @@ dependencies = [
     "langchain==0.3.27",
     "langchain-openai==0.3.26",
     "pydantic==2.12.3",
+    "scikit-learn>=1.7.2",
 ]
 
 [project.scripts]
 classification-generate = "personal_attention_manager.agents.classification.eval.generate:main"
 classification-eval = "personal_attention_manager.agents.classification.eval.evaluate:main"
+situation-generate = "personal_attention_manager.agents.situation.eval.generate:main"
+situation-eval = "personal_attention_manager.agents.situation.eval.evaluate:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

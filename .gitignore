@@ -48,3 +48,4 @@ data/reminders.db-wal
 
 # Eval run outputs
 runs/
+*files/

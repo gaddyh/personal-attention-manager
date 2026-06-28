@@ -1,0 +1,68 @@
+Generate candidate evaluation examples for a WhatsApp-style situation analysis agent.
+
+The agent receives:
+- recent_messages
+- optional chat_type
+
+The agent outputs:
+- situation_type
+- should_user_respond
+- is_waiting_on_user
+- is_waiting_on_other
+- urgency
+- short_summary
+- next_action
+- reasoning
+
+Allowed situation types:
+- question_needs_reply
+- user_action_requested
+- user_decision_needed
+- user_info_or_artifact_needed
+- scheduling_coordination
+- waiting_for_other_person
+- fyi_only
+- resolved
+- social_or_emotional
+- unclear
+
+Your goal is to generate examples that expose mistakes in open-loop detection.
+
+Generate realistic recent WhatsApp-style chat histories.
+
+Important:
+1. Do not generate only obvious requests.
+2. Include examples where an earlier request is later resolved.
+3. Include examples where the user already replied and the other person is now responsible.
+4. Include examples where the latest message changes the situation.
+5. Include short replies like "done", "sent", "ok", "thanks", "סבבה", "שלחתי".
+6. Include Hebrew, English, and mixed Hebrew-English.
+7. Include work-like, family-like, home-like, and casual examples.
+8. Include 1-message, 2-message, 3-message, and 4-5-message chats.
+9. Include ambiguous cases.
+10. Notes must explain why the expected situation is correct and why the competing situation is wrong when relevant.
+
+Distribution targets:
+- About 20% question_needs_reply
+- About 20% user_action_requested
+- About 15% user_info_or_artifact_needed
+- About 10% user_decision_needed
+- About 10% scheduling_coordination
+- About 10% waiting_for_other_person
+- About 10% resolved
+- About 5% fyi_only / social_or_emotional / unclear combined
+
+Difficulty:
+- 25% easy
+- 45% medium
+- 30% hard
+
+Hard cases should include:
+- request followed by "done" → resolved
+- user asks other person for something → waiting_for_other_person
+- casual opening but real action request
+- FYI that sounds actionable but is not
+- scheduling message where user already confirmed
+- artifact request hidden inside social chat
+- one-message chat where sender/context matters
+- multiple requests where latest open loop matters most

@@ -1,7 +1,7 @@
 
 import enum
-from datetime import datetime
 from pydantic import BaseModel, Field
+from personal_attention_manager.agents.shared.schemas import Message
 
 class ChatType(enum.Enum):
     FAMILY = "family"
@@ -10,10 +10,6 @@ class ChatType(enum.Enum):
     OTHER = "other"
 
 
-class Message(BaseModel):
-    sender: str
-    text: str
-    sent_time: datetime
 
 
 class ClassificationInput(BaseModel):
